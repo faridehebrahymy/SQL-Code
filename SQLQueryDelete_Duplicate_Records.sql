@@ -165,6 +165,6 @@ TRUNCATE TABLE cars;
 
 INSERT INTO cars 
 SELECT DISTINCT * FROM carbkp
-DROP TABLE cars_bkp;
+DROP TABLE carbkp;
 
 
