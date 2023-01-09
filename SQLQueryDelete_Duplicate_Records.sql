@@ -33,6 +33,9 @@ WHERE id IN(
 			HAVING COUNT(*) >1)
 
 
+
+
+
 -->> SOLUTION 5: Using backup table.
 
 SELECT 
@@ -91,6 +94,7 @@ DROP TABLE carbkp;
 
 -- Requirement: Delete duplicate entry for a car in the CARS table.
 
+
 drop table if exists cars;
 create table cars
 (
@@ -120,35 +124,47 @@ where ctid in ( select max(ctid)
                 having count(*) > 1);
 
 
--->> SOLUTION 2: Using SELF join
-DELETE FROM cars 
-WHERE id IN( 
-		select c2.id
-		from cars c1
-		join cars c2 on c1.model = c2.model and c1.brand = c2.brand
-		where c1.id < c2.id
-)
+-->> SOLUTION 2: By creating a temporary unique id column (any RDBMS)
+
+ALTER TABLE cars ADD COLUMN row_num int GENERATED ALWAYS AS identity;
+
+
+delete from cars
+where ctid in ( select max(ctid)
+                from cars
+                group by model, brand
+                having count(*) > 1);
+
+ALTER TABLE cars DROP COLUMN row_num;
+
+-->> SOLUTION 3: By creating a backup table.
 
 
 
+SELECT DISTINCT *
+INTO 
+dbo.carbkp
+FROM
+dbo.cars;
+SELECT * FROM carbkp
+DROP TABLE cars;
+GO
+EXEC sp_rename 'carbkp', 'cars';
 
--->> SOLUTION 3: Using Window function
-DELETE FROM cars
-WHERE id IN(
-		   SELECT id
-		   FROM (
-			SELECT *
-			, ROW_NUMBER() over (PARTITION BY MODEL , BRAND ORDER BY MODEL , BRAND) AS RN
-			FROM Cars) F
-	WHERE F.RN >1)
+-->> SOLUTION 4: By creating a backup table without dropping the original table.
 
+SELECT DISTINCT *
+INTO 
+dbo.carbkp
+FROM
+dbo.cars;
 
+SELECT * FROM carbkp;
 
--->> SOLUTION 4: Using MIN function. This delete even multiple duplicate records.
-	DELETE FROM Cars 
-	WHERE id NOT IN (
-			SELECT min (id)
-			FROM Cars
-			Group BY MODEL , BRAND)
+TRUNCATE TABLE cars;
+
+INSERT INTO cars 
+SELECT DISTINCT * FROM carbkp
+DROP TABLE cars_bkp;
 
 
