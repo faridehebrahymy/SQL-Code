@@ -11,4 +11,24 @@ WHERE  delivered_at IS NOT NULL
 GROUP BY  delivery_center_id
 ORDER BY AVG(delivered_at - received_at)
 LIMIT 5;
+-- Section3
+SELECT product_id FROM order_details
+JOIN products p on order_details.product_id = p.id
+JOIN orders o on order_details.order_id = o.id
+WHERE  (o.created_at - INTERVAL 1 WEEK ) <= p.created_at
+GROUP BY order_details.product_id
+HAVING  SUM(order_details.quantity)< 10
+ORDER BY product_id
+
+
+
+
+
+
+
+
+
+
+
+
 
